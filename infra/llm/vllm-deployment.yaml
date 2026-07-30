@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vllm-server
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vllm
+  template:
+    metadata:
+      labels:
+        app: vllm
+    spec:
+      containers:
+      - name: vllm
+        image: vllm/vllm-openai:latest
+        command: ["python3", "-m", "vllm.entrypoints.openai.api_server"]
+        args: ["--model", "TinyLlama/TinyLlama-1.1B-Chat-v1.0", "--dtype", "half", "--enforce-eager"]
+        ports:
+        - containerPort: 8000
+        resources:
+          requests:
+            cpu: "1"
+            memory: "2Gi"
+          limits:
+            cpu: "2"
+            memory: "4Gi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vllm-service
+  namespace: default
+spec:
+  selector:
+    app: vllm
+  ports:
+    - protocol: TCP
+      port: 8000
+      targetPort: 8000
